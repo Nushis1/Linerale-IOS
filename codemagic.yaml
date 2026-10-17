@@ -70,7 +70,6 @@ workflows:
     publishing:
       app_store_connect:
         auth: integration
-        app_identifier: com.linerale.app
         submit_to_testflight: false
       email:
         recipients:
