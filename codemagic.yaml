@@ -1,55 +1,80 @@
 # Codemagic pipeline for Linerale (iOS 27 / Swift 6.4 / Xcode 27).
-# `latest` on Codemagic still resolves to Xcode 26.x, so the Xcode version is
-# pinned explicitly to match the local toolchain and the Package.swift
+#
+# Add an environment variable group named `ios_creds` in the Codemagic UI
+# containing: APPLE_ID, APPLE_ID_PASSWORD (app-specific), and TEAM_ID.
+# Automatic provisioning (-allowProvisioningUpdates) picks a matching profile.
+#
+# Xcode version pins to 27.2 to match the local toolchain and the Package.swift
 # `swift-tools-version: 6.4` requirement.
+
 workflows:
   ios-build:
-    name: iOS — generate project, test, archive
-    integration: codemagic
-    trigger:
-      push:
-        branch_patterns:
-          - pattern: main
-            eq: true
-      retry: 4
+    name: iOS 27 — generate, test, archive, export
+    instance_type: mac_mini_m2
+    max_build_duration: 90
+
     environment:
+      groups:
+        - ios_creds
       vars:
-        XCODE_VERSION: "27.2"
-        SWIFT_VERSION: "6.4"
-        TEAM_ID: "TEAM1234"
-      xcode: "27.x"
-    steps:
-      - name: Generate Xcode project from project.yml (XcodeGen)
+        XCODE_SCHEME: "Linerale"
+        BUNDLE_ID: "com.linerale.app"
+      xcode: "27.2"
+
+    cache:
+      cache_paths:
+        - ~/Library/Developer/Xcode/DerivedData
+
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: "main"
+          include: true
+
+    scripts:
+      - name: Generate Xcode project (XcodeGen)
         script: |
-          # xcodegen is available on the Codemagic macOS image.
+          set -ex
           xcodegen generate --spec App/project.yml
-      - name: Resolve SPM dependencies
+      - name: Resolve SPM package dependencies
         script: |
+          set -ex
           xcodebuild -project App/Linerale.xcodeproj -allConfigurations -resolvePackage
-      - name: Run unit tests (SPM library test targets)
+      - name: Run unit tests
         script: |
+          set -ex
           swift test --filter "LineraleDomainTests|LineraleDataTests|LineralePlaybackTests|LineraleUITests"
       - name: Build archive
         script: |
+          set -ex
           xcodebuild -project App/Linerale.xcodeproj \
-            -scheme Linerale \
+            -scheme "$XCODE_SCHEME" \
             -configuration Release \
-            -archivePath $PROJECT_BUILD_DIR/Linerale.xcarchive \
+            -archivePath "$PROJECT_BUILD_DIR/Linerale.xcarchive" \
             -destination "generic/platform=iOS" \
             -allowProvisioningUpdates \
             archive
       - name: Export IPA
         script: |
+          set -ex
           xcodebuild -exportArchive \
-            -archivePath $PROJECT_BUILD_DIR/Linerale.xcarchive \
-            -exportPath $PROJECT_BUILD_DIR \
+            -archivePath "$PROJECT_BUILD_DIR/Linerale.xcarchive" \
+            -exportPath "$PROJECT_BUILD_DIR" \
             -exportOptionsPlist scripts/exportOptions.plist
+
     artifacts:
       - build/**/Linerale.ipa
+      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.dSYM
+
     publishing:
-      app_store:
-        submit_to_app_store: true
-        skip_waiting_for_build_processing: true
+      app_store_connect:
+        auth: integration
         app_identifier: com.linerale.app
-        apple_id: team@example.com
-        team_id: TEAM1234
+        submit_to_testflight: false
+      email:
+        recipients:
+          - newros278@gmail.com
+        notify:
+          success: true
+          failure: true

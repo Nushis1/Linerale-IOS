@@ -98,7 +98,7 @@ flowchart TD
 
 ## Getting started
 
-> ⚠️ Building requires macOS + Xcode 27.2. Codemagic builds from this repository.
+> Building requires macOS + Xcode 27.2. Codemagic builds from this repository.
 
 **Option A — Swift Package Manager**
 
