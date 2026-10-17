@@ -23,12 +23,12 @@ public final class PlaybackAnalytics: Sendable {
         self.config = config
         if let storageURL { self.storageURL = storageURL }
         else {
+            let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             let base: URL
             if #available(macOS 13.0, *) {
-                base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first ?? .temporaryDirectory
+                base = appSupport ?? .temporaryDirectory
             } else {
-                base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
-                    ?? FileManager.default.temporaryDirectory
+                base = appSupport ?? URL(fileURLWithPath: NSTemporaryDirectory())
             }
             let dir = base.appendingPathComponent("LineraleAnalytics", isDirectory: true)
             self.storageURL = dir

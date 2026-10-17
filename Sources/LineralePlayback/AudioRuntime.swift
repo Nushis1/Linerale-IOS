@@ -86,14 +86,14 @@ public final class AudioRuntime: AudioRuntimeControlling {
             object: nil,
             queue: .main
         ) { [weak self] note in
-            self?.handleItemFinished(note)
+            Task { @MainActor in self?.handleItemFinished(note) }
         }
         playbackFailedToken = NotificationCenter.default.addObserver(
             forName: .AVPlayerItemFailedToPlayEndTime,
             object: nil,
             queue: .main
         ) { [weak self] note in
-            self?.handleItemFailed(note)
+            Task { @MainActor in self?.handleItemFailed(note) }
         }
     }
 
@@ -220,7 +220,9 @@ public final class AudioRuntime: AudioRuntimeControlling {
         player.insert(item, after: nil)
         if startPositionMs > 0 {
             let cmTime = CMTime(value: CMTimeValue(startPositionMs), timescale: 1000)
-            player.seek(to: cmTime) { [weak self] _ in self?.player.play() }
+            player.seek(to: cmTime) { [weak self] _ in
+                Task { @MainActor in self?.player.play() }
+            }
         } else {
             player.play()
         }
