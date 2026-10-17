@@ -124,9 +124,8 @@ public final class AudioRuntime: AudioRuntimeControlling {
             guard let self else { return }
             do {
                 let url: URL
-
-        if let cached = try? await cache.getAudio(for: trackId),
-           isStandaloneAudioFile(Data(cached.prefix(1024))) {
+                if let cached = try? await cache.getAudio(for: trackId),
+                   isStandaloneAudioFile(Data(cached.prefix(1024))) {
                     url = try writeTemp(cached, trackId: trackId, suffix: "cached")
                 } else {
                     let session = try await api.createPlaybackSession(for: trackId)
