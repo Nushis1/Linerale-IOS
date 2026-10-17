@@ -137,9 +137,9 @@ public struct AnyJSON: Codable, @unchecked Sendable {
     public init(_ value: Any) { self.value = value }
 
     public init(from decoder: Decoder) throws {
-        let container = decoder.singleValueContainer()
+        let container = try decoder.singleValueContainer()
         if try container.decodeNil() { self.value = NSNull() }
-        else if let x = try? container.decode(Bool.self) { self.value = x }
+        else if let x = try container.decode(Bool.self) { self.value = x }
         else if let x = try? container.decode(Int64.self) { self.value = x }
         else if let x = try? container.decode(Double.self) { self.value = x }
         else if let x = try? container.decode(String.self) { self.value = x }
@@ -154,20 +154,44 @@ public struct AnyJSON: Codable, @unchecked Sendable {
         }
     }
 
+    private struct JSONKey: CodingKey {
+        let stringValue: String
+        init?(stringValue: String) { self.stringValue = stringValue }
+        var intValue: Int? { nil }
+        init?(intValue: Int) { nil }
+    }
+
     public func encode(to encoder: Encoder) throws {
-        var container = encoder.singleValueContainer()
         switch value {
-        case let x as Bool: try container.encode(x)
-        case let x as Int: try container.encode(x)
-        case let x as Int64: try container.encode(x)
-        case let x as Double: try container.encode(x)
-        case let x as String: try container.encode(x)
-        case let x as NSNull: try container.encodeNil()
+        case let x as Bool:
+            var c = encoder.singleValueContainer()
+            try c.encode(x)
+        case let x as Int:
+            var c = encoder.singleValueContainer()
+            try c.encode(x)
+        case let x as Int64:
+            var c = encoder.singleValueContainer()
+            try c.encode(x)
+        case let x as Double:
+            var c = encoder.singleValueContainer()
+            try c.encode(x)
+        case let x as String:
+            var c = encoder.singleValueContainer()
+            try c.encode(x)
+        case let x as NSNull:
+            var c = encoder.singleValueContainer()
+            try c.encodeNil()
         case let x as [Any]:
-            try x.map(AnyJSON.init).encode(to: container.superEncoder())
+            var c = encoder.unkeyedContainer()
+            for item in x { try c.encode(AnyJSON(item)) }
         case let x as [String: Any]:
-            try x.mapValues(AnyJSON.init).encode(to: container.superEncoder())
-        case Optional.none: try container.encodeNil()
+            var c = encoder.container(keyedBy: JSONKey.self)
+            for (key, item) in x {
+                try c.encode(AnyJSON(item), forKey: JSONKey(stringValue: key)!)
+            }
+        case Optional<Any>.none:
+            var c = encoder.singleValueContainer()
+            try c.encodeNil()
         default: throw EncodingError.invalidValue(value, .init(codingPath: encoder.codingPath, debugDescription: "AnyJSON: unsupported type"))
         }
     }
