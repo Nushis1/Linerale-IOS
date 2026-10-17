@@ -23,8 +23,14 @@ public final class PlaybackAnalytics: Sendable {
         self.config = config
         if let storageURL { self.storageURL = storageURL }
         else {
-            let dir = (FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first ?? .temporaryDirectory)
-                .appendingPathComponent("LineraleAnalytics", isDirectory: true)
+            let base: URL
+            if #available(macOS 13.0, *) {
+                base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first ?? .temporaryDirectory
+            } else {
+                base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+                    ?? FileManager.default.temporaryDirectory
+            }
+            let dir = base.appendingPathComponent("LineraleAnalytics", isDirectory: true)
             self.storageURL = dir
         }
         loadBuffer()
@@ -50,7 +56,7 @@ public final class PlaybackAnalytics: Sendable {
         }
     }
 
-    private func persist(_ events: [PlaybackEvent]) {
+    private func persist(_ events: [PlaybackEvent]) throws {
         // Real app: POST to backend. Here we append to the manifest file.
         var existing: [PlaybackEvent] = []
         if let data = try? Data(contentsOf: storageURL),

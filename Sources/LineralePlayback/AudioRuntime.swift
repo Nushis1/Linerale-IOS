@@ -77,28 +77,33 @@ public final class AudioRuntime: AudioRuntimeControlling {
         try? audioEngine.start()
     }
 
+    private var playbackFinishedToken: NSObjectProtocol?
+    private var playbackFailedToken: NSObjectProtocol?
+
     private func setupNotifications() {
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(handleItemFinished),
-            name: .AVPlayerItemDidPlayToEndTime,
-            object: nil
-        )
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(handleItemFailed),
-            name: .AVPlayerItemFailedToPlayEndTime,
-            object: nil
-        )
+        playbackFinishedToken = NotificationCenter.default.addObserver(
+            forName: .AVPlayerItemDidPlayToEndTime,
+            object: nil,
+            queue: .main
+        ) { [weak self] note in
+            self?.handleItemFinished(note)
+        }
+        playbackFailedToken = NotificationCenter.default.addObserver(
+            forName: .AVPlayerItemFailedToPlayEndTime,
+            object: nil,
+            queue: .main
+        ) { [weak self] note in
+            self?.handleItemFailed(note)
+        }
     }
 
-    @objc private func handleItemFinished(_ note: Notification) {
+    private func handleItemFinished(_ note: Notification) {
         guard let item = note.object as? AVPlayerItem,
               player.currentItem === item else { return }
         delegate?.runtimePlaybackEnded(trackId: _currentTrackId)
     }
 
-    @objc private func handleItemFailed(_ note: Notification) {
+    private func handleItemFailed(_ note: Notification) {
         if let err = (note.userInfo?[AVPlayerItemFailedToPlayEndTimeErrorKey] as? Error) {
             delegate?.runtimeError(trackId: _currentTrackId, message: "AVPlayerItem failed: \(err)")
         }
@@ -255,7 +260,12 @@ public final class AudioRuntime: AudioRuntimeControlling {
     }
 
     deinit {
-        NotificationCenter.default.removeObserver(self)
+        if let token = playbackFinishedToken {
+            NotificationCenter.default.removeObserver(token)
+        }
+        if let token = playbackFailedToken {
+            NotificationCenter.default.removeObserver(token)
+        }
     }
 }
 

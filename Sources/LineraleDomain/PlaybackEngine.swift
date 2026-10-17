@@ -155,7 +155,7 @@ public final class PlaybackEngine: ObservableObject {
             (queueIndex != nil &&
              state.queue.count > 0 &&
              state.queue.count == nextQueue.count &&
-             state.queue[queueIndex!]?.id == track.id)
+             state.queue[queueIndex!].id == track.id)
 
         if !isSelectingFromCurrentQueue { masterPlaylist = nextQueue }
         if !isSelectingFromCurrentQueue && state.shuffle && nextQueue.count > 1 {
@@ -169,7 +169,7 @@ public final class PlaybackEngine: ObservableObject {
             originalUpcomingQueue = []
         }
 
-        let selectedTrack = finalQueue[finalIndex] ?? track
+        let selectedTrack = finalIndex < finalQueue.count ? finalQueue[finalIndex] : track
 
         mutate {
             if let context { $0.playbackContext = context }
