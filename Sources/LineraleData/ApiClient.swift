@@ -163,8 +163,10 @@ public struct AnyJSON: Codable, @unchecked Sendable {
         case let x as Double: try container.encode(x)
         case let x as String: try container.encode(x)
         case let x as NSNull: try container.encodeNil()
-        case let x as [Any]: try container.encode(x.map(AnyJSON.init))
-        case let x as [String: Any]: try container.encode(x.mapValues(AnyJSON.init))
+        case let x as [Any]:
+            try x.map(AnyJSON.init).encode(to: container.superEncoder())
+        case let x as [String: Any]:
+            try x.mapValues(AnyJSON.init).encode(to: container.superEncoder())
         case Optional.none: try container.encodeNil()
         default: throw EncodingError.invalidValue(value, .init(codingPath: encoder.codingPath, debugDescription: "AnyJSON: unsupported type"))
         }
