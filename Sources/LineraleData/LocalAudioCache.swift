@@ -177,7 +177,7 @@ public final class LocalAudioCache: @unchecked Sendable {
     }
 
     /// Records used internally for LRU eviction ordering.
-    func getOldestAudioRecords() async -> [Record] {
+    private func getOldestAudioRecords() async -> [Record] {
         stateLock.withLock {
             manifest.records.values.sorted { $0.lastAccessedAt < $1.lastAccessedAt }
         }
