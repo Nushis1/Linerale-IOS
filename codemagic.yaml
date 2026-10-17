@@ -6,6 +6,9 @@
 #
 # Xcode version pins to 27.2 to match the local toolchain and the Package.swift
 # `swift-tools-version: 6.4` requirement.
+#
+# XcodeGen is not preinstalled on the Codemagic macOS image, so the first step
+# installs it via Homebrew.
 
 workflows:
   ios-build:
@@ -33,6 +36,10 @@ workflows:
           include: true
 
     scripts:
+      - name: Install XcodeGen
+        script: |
+          set -ex
+          brew install xcodegen
       - name: Generate Xcode project (XcodeGen)
         script: |
           set -ex
