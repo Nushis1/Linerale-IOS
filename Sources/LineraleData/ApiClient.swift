@@ -132,7 +132,7 @@ public final class DefaultApiHeaderProvider: ApiHeaderProvider, @unchecked Senda
 /// Type-erased JSON value, captured so an arbitrary `body` subtree can survive a
 /// decode → mutate → re-encode round trip. `@unchecked Sendable` because it is
 /// never mutated across actors after construction.
-public struct AnyJSON: @unchecked Sendable {
+public struct AnyJSON: Codable, @unchecked Sendable {
     public let value: Any
     public init(_ value: Any) { self.value = value }
 
@@ -209,7 +209,7 @@ public final class APIClient: @unchecked Sendable {
         var requestBody: [String: String] = [:]
         if let transport { requestBody["transport"] = transport.rawValue }
         if let preferredCodec { requestBody["preferredCodec"] = preferredCodec.rawValue }
-        let body = try JSONEncoder().encode(requestBody).flatMap { String(data: $0, encoding: .utf8) }
+        let body = try String(data: JSONEncoder().encode(requestBody), encoding: .utf8)
         let signed = try await signer.sign(method: "POST", path: path, body: body, timestamp: 0, nonce: UUID().uuidString)
         let req = try buildRequest(path: path, method: "POST", body: body, signed: signed)
         return try await performRequest(req, type: PlaybackSessionResponse.self)

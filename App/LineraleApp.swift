@@ -86,17 +86,21 @@ final class NowPlayingManager {
     init() {
         self.infoCenter = MPNowPlayingInfoCenter.default()
         self.commandCenter = MPRemoteCommandCenter.default()
-        commandCenter.playCommand.addTarget { [weak self] in
+        commandCenter.playCommand.addTarget { [weak self] _ in
             Task { await self?.engine?.resume() }
+            return .success
         }
-        commandCenter.pauseCommand.addTarget { [weak self] in
+        commandCenter.pauseCommand.addTarget { [weak self] _ in
             Task { await self?.engine?.pause() }
+            return .success
         }
-        commandCenter.nextTrackCommand.addTarget { [weak self] in
-            Task { await self?.engine?.dispatch(.skipNext(isAutoEnd: false)) }
+        commandCenter.nextTrackCommand.addTarget { [weak self] _ in
+            Task { await self?.engine?.skipNext(isAutoEnd: false) }
+            return .success
         }
-        commandCenter.previousTrackCommand.addTarget { [weak self] in
+        commandCenter.previousTrackCommand.addTarget { [weak self] _ in
             Task { await self?.engine?.skipPrevious() }
+            return .success
         }
     }
 

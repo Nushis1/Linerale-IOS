@@ -56,6 +56,7 @@ public final class AudioRuntime: AudioRuntimeControlling {
         self.reverb = AVAudioUnitReverb()
         attachEngine()
         setupNotifications()
+        #if os(iOS)
         do {
             let session = AVAudioSession.sharedInstance()
             try session.setCategory(.playback, mode: .default, options: [.interruptSpokenAudioAndSiri, .allowBluetooth, .allowAirPlay])
@@ -63,6 +64,7 @@ public final class AudioRuntime: AudioRuntimeControlling {
         } catch {
             delegate?.runtimeError(trackId: nil, message: "AVAudioSession activate failed: \(error)")
         }
+        #endif
     }
 
     private func attachEngine() {
@@ -92,7 +94,7 @@ public final class AudioRuntime: AudioRuntimeControlling {
 
     @objc private func handleItemFinished(_ note: Notification) {
         guard let item = note.object as? AVPlayerItem,
-              player.currentItem == item else { return }
+              player.currentItem === item else { return }
         delegate?.runtimePlaybackEnded(trackId: _currentTrackId)
     }
 
@@ -118,8 +120,8 @@ public final class AudioRuntime: AudioRuntimeControlling {
             do {
                 let url: URL
 
-                if let cached = try? await cache.getAudio(for: trackId),
-                   isStandaloneAudioFile(cached.prefix(1024)) {
+        if let cached = try? await cache.getAudio(for: trackId),
+           isStandaloneAudioFile(Data(cached.prefix(1024))) {
                     url = try writeTemp(cached, trackId: trackId, suffix: "cached")
                 } else {
                     let session = try await api.createPlaybackSession(for: trackId)
@@ -185,14 +187,14 @@ public final class AudioRuntime: AudioRuntimeControlling {
 
     public func setPlaybackRate(_ rate: Double, preservePitch: Bool) async {
         player.rate = max(0.0, rate)
-        if preservePitch { timePitch?.rate = 1.0 }
+        if preservePitch { timePitch.rate = 1.0 }
     }
 
     public func applyPitch(semitones: Double, linked: Bool, reverb: Bool, reverbLevel: Double) async {
         if linked {
             player.rate = 1.0
         } else {
-            timePitch?.pitch = semitones
+            timePitch.pitch = semitones
         }
         if reverb {
             self.reverb.wetDryMix = max(0.0, min(100.0, reverbLevel * 100.0))

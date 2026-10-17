@@ -110,7 +110,8 @@ public final class PlaybackEngine: ObservableObject {
         case .resume:
             return Task { await resume() }
         case .seek(let positionMs):
-            return Task { seek(positionMs: positionMs) }
+            seek(positionMs: positionMs)
+            return Task {}
         case .skipNext(let auto):
             return Task { await skipNext(isAutoEnd: auto) }
         case .skipPrevious:
@@ -547,7 +548,7 @@ public final class PlaybackEngine: ObservableObject {
     public func reorderQueue(from: Int, to: Int) {
         var queue = state.queue
         guard queue.indices.contains(from), queue.indices.contains(to), from != to else { return }
-        let [moved] = queue.removeSubrange(from...from)
+        let moved = queue.remove(at: from)
         queue.insert(moved, at: to)
 
         var newCurrent = state.currentIndex

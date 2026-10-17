@@ -99,7 +99,20 @@ public struct Track: Codable, Sendable, Hashable {
     }
 }
 
-// MARK: - Playback session model (mirrors PlaybackSessionResponse)
+// MARK: - Radio options (mirrors RadioOptions)
+
+public struct RadioOptions: Sendable {
+    public let history: [String]
+    public let k: Int
+    public let waveId: String
+    public init(history: [String] = [], k: Int = 20, waveId: String = "") {
+        self.history = history
+        self.k = k
+        self.waveId = waveId
+    }
+}
+
+// MARK: Playback session model (mirrors PlaybackSessionResponse)
 
 public struct PlaybackSession: Codable, Sendable {
     public let sessionId: String?

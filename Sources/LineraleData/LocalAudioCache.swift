@@ -138,7 +138,7 @@ public final class LocalAudioCache: @unchecked Sendable {
     }
 
     public func saveAudio(_ data: Data, for trackId: String, mimeType: String = "audio/ogg") async throws {
-        guard isStandaloneAudioFile(data.prefix(1024)) else {
+        guard isStandaloneAudioFile(Data(data.prefix(1024))) else {
             throw AudioCacheError.notPlayable
         }
         let fileName = "\(trackId).\(fileExtension(for: mimeType))"
