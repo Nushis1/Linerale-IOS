@@ -47,7 +47,7 @@ workflows:
       - name: Resolve SPM package dependencies
         script: |
           set -ex
-          xcodebuild -project App/Linerale.xcodeproj -allConfigurations -resolvePackage
+          xcodebuild -project App/Linerale.xcodeproj -resolvePackageDependencies
       - name: Run unit tests
         script: |
           set -ex
