@@ -43,7 +43,7 @@ public final class LocalAudioCache: @unchecked Sendable {
         self.manifestURL = container.appendingPathComponent("manifest.json", isDirectory: false)
         self.manifest = try Self.loadManifest(from: manifestURL, fileManager: fileManager)
         let stored = UserDefaults.standard.integer(forKey: cacheLimitKey)
-        self.limitBytes = stored > 0 ? Int64(stored) : defaultLimitBytes
+        self.limitBytes = stored > 0 ? Int64(stored) : Self.defaultLimitBytes
     }
 
     // MARK: - Manifest
@@ -109,7 +109,7 @@ public final class LocalAudioCache: @unchecked Sendable {
 
         let oldest = await getOldestAudioRecords()
         for record in oldest where evictedBytes < bytesToEvict {
-            let size = await deleteAudio(record.trackId)
+            let size = await deleteAudio(for: record.trackId)
             evictedBytes += size
         }
         return evictedBytes
@@ -121,19 +121,19 @@ public final class LocalAudioCache: @unchecked Sendable {
 
     public func getAudio(for trackId: String) async throws -> Data? {
         return try await withCheckedThrowingContinuation { continuation in
-            stateLock.lock()
-            defer { stateLock.unlock() }
-            guard let record = manifest.records[trackId] else {
-                continuation.resume(returning: nil)
-                return
+            stateLock.withLock {
+                guard let record = manifest.records[trackId] else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+                manifest.records[trackId]?.lastAccessedAt = Date()
+                do { try saveManifest() } catch let err { continuation.resume(throwing: err); return }
+                let fileURL = container.appendingPathComponent(record.fileName, isDirectory: false)
+                do {
+                    let data = try Data(contentsOf: fileURL)
+                    continuation.resume(returning: data)
+                } catch let err { continuation.resume(throwing: err) }
             }
-            manifest.records[trackId]?.lastAccessedAt = Date()
-            do { try saveManifest() } catch let err { continuation.resume(throwing: err); return }
-            let fileURL = container.appendingPathComponent(record.fileName, isDirectory: false)
-            do {
-                let data = try Data(contentsOf: fileURL)
-                continuation.resume(returning: data)
-            } catch let err { continuation.resume(throwing: err) }
         }
     }
 
@@ -145,34 +145,34 @@ public final class LocalAudioCache: @unchecked Sendable {
         let fileURL = container.appendingPathComponent(fileName, isDirectory: false)
         try data.write(to: fileURL, options: .atomic)
 
-        stateLock.lock()
-        defer { stateLock.unlock() }
-        manifest.records[trackId] = Record(
-            trackId: trackId,
-            fileName: fileName,
-            mimeType: mimeType,
-            byteSize: Int64(data.count),
-            createdAt: Date(),
-            lastAccessedAt: Date(),
-            expiresAt: nil
-        )
-        try? saveManifest()
+        stateLock.withLock {
+            manifest.records[trackId] = Record(
+                trackId: trackId,
+                fileName: fileName,
+                mimeType: mimeType,
+                byteSize: Int64(data.count),
+                createdAt: Date(),
+                lastAccessedAt: Date(),
+                expiresAt: nil
+            )
+            try? saveManifest()
+        }
     }
 
     @discardableResult
     public func deleteAudio(for trackId: String) async -> Int64 {
         return await withCheckedContinuation { continuation in
-            stateLock.lock()
-            defer { stateLock.unlock() }
-            guard let record = manifest.records.removeValue(forKey: trackId) else {
-                continuation.resume(returning: 0)
-                return
+            stateLock.withLock {
+                guard let record = manifest.records.removeValue(forKey: trackId) else {
+                    continuation.resume(returning: 0)
+                    return
+                }
+                let fileURL = container.appendingPathComponent(record.fileName, isDirectory: false)
+                let size = record.byteSize
+                try? fileManager.removeItem(at: fileURL)
+                try? saveManifest()
+                continuation.resume(returning: size)
             }
-            let fileURL = container.appendingPathComponent(record.fileName, isDirectory: false)
-            let size = record.byteSize
-            try? fileManager.removeItem(at: fileURL)
-            try? saveManifest()
-            continuation.resume(returning: size)
         }
     }
 
