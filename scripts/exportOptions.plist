@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Ad-hoc (development) export; flip to app-store for App Store Connect submission. -->
+    <key>method</key>
+    <string>ad-hoc</string>
+    <key>compileBitcode</key>
+    <false/>
+    <key>uploadSymbols</key>
+    <true/>
+    <key>uploadBitcode</key>
+    <false/>
+    <key>teamID</key>
+    <string>TEAM1234</string>
+    <key>signingStyle</arg_key>
+    <string>automatic</string>
+</dict>
+</plist>
