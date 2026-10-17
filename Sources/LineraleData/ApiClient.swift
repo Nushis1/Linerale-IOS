@@ -257,7 +257,7 @@ public final class APIClient: @unchecked Sendable {
         for (k, v) in requestHeaders { request.setValue(v, forHTTPHeaderField: k) }
         request.httpBody = bodyData
 
-        let (data, response) = try await session.data(for: request)
+        let (data, response) = try await self.session.data(for: request)
         guard let http = response as? HTTPURLResponse else {
             throw ApiError(statusCode: 0, message: "No response", code: "NETWORK_ERROR")
         }
@@ -336,7 +336,7 @@ public final class APIClient: @unchecked Sendable {
                 headerFields["x-user-name"] = user.username
             }
         }
-        headerFields.merge(headers.correlationHeaders(nil)) { current, _ in current }
+        headerFields.merge(headers.correlationHeaders(for: nil)) { current, _ in current }
 
         for (field, value) in headerFields { request.setValue(value, forHTTPHeaderField: field) }
         if let body, let bodyData = body.data(using: .utf8) { request.httpBody = bodyData }
