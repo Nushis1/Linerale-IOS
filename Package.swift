@@ -8,7 +8,8 @@ let package = Package(
     // App/project.yml and `@available(iOS 27, *)` guards on 27-only APIs.
     // swift-tools-version: 6.4 maps to Xcode 27 / the iOS 27 SDK toolchain.
     platforms: [
-        .iOS(.v27)
+        .iOS(.v27),
+        .macOS(.v13),
     ],
     products: [
         .library(name: "LineraleDomain", targets: ["LineraleDomain"]),

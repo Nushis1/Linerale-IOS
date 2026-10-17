@@ -276,7 +276,7 @@ public final class APIClient: @unchecked Sendable {
         let formats = (json?["streamingData"] as? [String: Any])?["adaptiveFormats"] as? [[String: Any]] ?? []
         let audioFormats = formats.filter { fmt in
             let mimeType = fmt["mimeType"] as? String ?? ""
-            return mimeType.contains("audio"), (fmt["url"] as? String) != nil
+            return mimeType.contains("audio") && (fmt["url"] as? String) != nil
         }
         guard !audioFormats.isEmpty else {
             throw ApiError(statusCode: 0, message: "No direct audio formats returned by Innertube", code: "NO_FORMATS")

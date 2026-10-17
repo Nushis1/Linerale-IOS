@@ -128,12 +128,12 @@ public final class LocalAudioCache: @unchecked Sendable {
                 return
             }
             manifest.records[trackId]?.lastAccessedAt = Date()
-            do { try saveManifest() } catch { continuation.resume(throwing: $0); return }
+            do { try saveManifest() } catch let err { continuation.resume(throwing: err); return }
             let fileURL = container.appendingPathComponent(record.fileName, isDirectory: false)
             do {
                 let data = try Data(contentsOf: fileURL)
                 continuation.resume(returning: data)
-            } catch { continuation.resume(throwing: $0) }
+            } catch let err { continuation.resume(throwing: err) }
         }
     }
 
