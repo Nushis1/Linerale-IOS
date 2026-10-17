@@ -139,7 +139,7 @@ public struct AnyJSON: Codable, @unchecked Sendable {
     public init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()
         if try container.decodeNil() { self.value = NSNull() }
-        else if let x = try container.decode(Bool.self) { self.value = x }
+        else if let x = try? container.decode(Bool.self) { self.value = x }
         else if let x = try? container.decode(Int64.self) { self.value = x }
         else if let x = try? container.decode(Double.self) { self.value = x }
         else if let x = try? container.decode(String.self) { self.value = x }
